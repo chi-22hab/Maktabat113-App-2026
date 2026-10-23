@@ -1,0 +1,44 @@
+
+name: Build Maktabat113 APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Extract uploaded ZIP
+        run: |
+          ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "No ZIP file found in repository root"
+            exit 1
+          fi
+          mkdir extracted
+          unzip -q "$ZIP_FILE" -d extracted
+          find extracted -type f \( -name 'settings.gradle' -o -name 'settings.gradle.kts' \) -print
+
+      - name: Stop if project structure needs adjustment
+        run: |
+          echo "ZIP extracted. Check the project structure before selecting the Gradle build command."
+          find extracted -maxdepth 3 -type f | head -100
+          exit 1
